@@ -26,7 +26,7 @@ public class PurHis implements java.io.Serializable {
     private String vouNo;
     @Column(name = "trader_code")
     private String traderCode;
-    @Temporal(TemporalType.DATE)
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "vou_date")
     private Date vouDate;
     @Temporal(TemporalType.DATE)

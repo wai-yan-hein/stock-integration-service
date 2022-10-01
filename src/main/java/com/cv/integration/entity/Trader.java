@@ -19,6 +19,8 @@ public class Trader {
     @Id
     @Column(name = "code")
     private String traderCode;
+    @Column(name = "user_code")
+    private String userCode;
     @Column(name = "trader_name")
     private String traderName;
     @Column(name = "type")

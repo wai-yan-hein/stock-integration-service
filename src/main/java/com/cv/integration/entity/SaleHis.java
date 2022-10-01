@@ -5,7 +5,10 @@
  */
 package com.cv.integration.entity;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.Hibernate;
 
 import javax.persistence.*;
@@ -13,7 +16,7 @@ import java.util.Date;
 import java.util.Objects;
 
 /**
- * @author Mg Kyaw Thura Aung
+ * @author Wai Yan
  */
 @Entity
 @Getter
@@ -30,7 +33,7 @@ public class SaleHis implements java.io.Serializable {
     private String traderCode;
     @Column(name = "saleman_code")
     private String saleManCode;
-    @Temporal(TemporalType.DATE)
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "vou_date")
     private Date vouDate;
     @Column(name = "cur_code")
@@ -42,13 +45,15 @@ public class SaleHis implements java.io.Serializable {
     @Column(name = "discount")
     private Float discount;
     @Column(name = "tax_amt")
-    private Float taxP;
+    private Float taxAmt;
     @Column(name = "deleted")
     private Boolean deleted;
     @Column(name = "paid")
     private Float paid;
     @Column(name = "vou_balance")
     private Float balance;
+    @Column(name = "tax_p")
+    private Float taxPercent;
     @Column(name = "intg_upd_status")
     private String intgUpdStatus;
 

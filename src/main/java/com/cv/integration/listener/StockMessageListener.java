@@ -96,7 +96,7 @@ public class StockMessageListener {
             AccTrader accTrader = new AccTrader();
             accTrader.setTraderCode(c.getTraderCode());
             accTrader.setTraderName(c.getTraderName());
-            accTrader.setUserCode(c.getTraderCode());
+            accTrader.setUserCode(c.getUserCode());
             accTrader.setActive(true);
             accTrader.setCompCode(compCode);
             accTrader.setAppName(appName);
@@ -132,24 +132,31 @@ public class StockMessageListener {
             String payAcc = setting.getPayAcc();
             String disAcc = setting.getDiscountAcc();
             String balAcc = setting.getBalanceAcc();
+            String taxAcc = setting.getTaxAcc();
             String deptCode = setting.getDeptCode();
             Date vouDate = sh.getVouDate();
             String traderCode = sh.getTraderCode();
             String curCode = sh.getCurCode();
+            String remark = sh.getRemark();
             boolean deleted = sh.getDeleted();
+            double vouBal = Util1.getDouble(sh.getBalance());
+            double vouDis = Util1.getDouble(sh.getDiscount());
+            double vouPaid = Util1.getDouble(sh.getPaid());
+            double vouTax = Util1.getDouble(sh.getTaxAmt());
+            double vouTotal = Util1.getDouble(sh.getVouTotal());
+            double taxPercent = Util1.getDouble(sh.getTaxPercent());
             List<Gl> listGl = new ArrayList<>();
             //income
-            if (Util1.getDouble(sh.getVouTotal()) > 0) {
+            if (vouBal > 0) {
                 Gl gl = new Gl();
                 gl.setGlDate(vouDate);
                 gl.setDescription("Sale Voucher Balance");
                 gl.setSrcAccCode(srcAcc);
                 gl.setAccCode(balAcc);
                 gl.setTraderCode(traderCode);
-                gl.setCrAmt(Util1.getDouble(sh.getVouTotal()));
-                gl.setDrAmt(0.0);
+                gl.setCrAmt(vouBal);
                 gl.setCurCode(curCode);
-                gl.setReference("");
+                gl.setReference(remark);
                 gl.setDeptCode(deptCode);
                 gl.setCompCode(compCode);
                 gl.setCreatedDate(Util1.getTodayDate());
@@ -161,17 +168,22 @@ public class StockMessageListener {
                 listGl.add(gl);
             }
             //discount
-            if (Util1.getDouble(sh.getDiscount()) > 0) {
+            if (vouDis > 0) {
                 Gl gl = new Gl();
+                if (vouPaid > 0) {
+                    gl.setSrcAccCode(payAcc);
+                    gl.setCash(true);
+                } else {
+                    gl.setSrcAccCode(balAcc);
+                    gl.setTraderCode(traderCode);
+                }
+                gl.setCrAmt(vouDis);
+                gl.setAccCode(disAcc);
                 gl.setGlDate(vouDate);
                 gl.setDescription("Sale Voucher Discount");
-                gl.setSrcAccCode(disAcc);
-                gl.setAccCode(balAcc);
                 gl.setTraderCode(traderCode);
-                gl.setDrAmt(Util1.getDouble(sh.getDiscount()));
-                gl.setCrAmt(0.0);
                 gl.setCurCode(curCode);
-                gl.setReference("");
+                gl.setReference(remark);
                 gl.setDeptCode(deptCode);
                 gl.setCompCode(compCode);
                 gl.setCreatedDate(Util1.getTodayDate());
@@ -183,17 +195,42 @@ public class StockMessageListener {
                 listGl.add(gl);
             }
             //payment
-            if (Util1.getDouble(sh.getPaid()) > 0) {
+            if (vouPaid > 0) {
                 Gl gl = new Gl();
                 gl.setGlDate(vouDate);
                 gl.setDescription("Sale Voucher Paid");
                 gl.setSrcAccCode(payAcc);
-                gl.setAccCode(balAcc);
-                gl.setTraderCode(traderCode);
-                gl.setDrAmt(Util1.getDouble(sh.getPaid()));
-                gl.setCrAmt(0.0);
+                gl.setAccCode(srcAcc);
+                gl.setDrAmt(vouTotal);
                 gl.setCurCode(curCode);
-                gl.setReference("");
+                gl.setReference(remark);
+                gl.setDeptCode(deptCode);
+                gl.setCompCode(compCode);
+                gl.setCreatedDate(Util1.getTodayDate());
+                gl.setCreatedBy(appName);
+                gl.setTranSource(tranSource);
+                gl.setRefNo(vouNo);
+                gl.setDeleted(deleted);
+                gl.setMacId(macId);
+                listGl.add(gl);
+            }
+            //tax
+            if (vouTax > 0) {
+                Gl gl = new Gl();
+                if (vouPaid > 0) {
+                    gl.setSrcAccCode(payAcc);
+                    gl.setCash(true);
+                } else {
+                    gl.setSrcAccCode(balAcc);
+                    gl.setTraderCode(traderCode);
+                }
+                gl.setAccCode(taxAcc);
+                gl.setDrAmt(vouTax);
+                gl.setGlDate(vouDate);
+                gl.setDescription(String.format("Sale Voucher Tax (%s)", taxPercent));
+                gl.setTraderCode(traderCode);
+                gl.setCurCode(curCode);
+                gl.setReference(remark);
                 gl.setDeptCode(deptCode);
                 gl.setCompCode(compCode);
                 gl.setCreatedDate(Util1.getTodayDate());
@@ -209,7 +246,6 @@ public class StockMessageListener {
         } else {
             log.info(String.format("sendSaleVoucherToAccount: %s not found.", vouNo));
         }
-
     }
 
     private void updateSale(String vouNo) {
@@ -236,20 +272,24 @@ public class StockMessageListener {
             Date vouDate = ph.getVouDate();
             String traderCode = ph.getTraderCode();
             String curCode = ph.getCurCode();
+            String remark = ph.getRemark();
             boolean deleted = ph.getDeleted();
+            double vouTotal = Util1.getDouble(ph.getVouTotal());
+            double vouDis = Util1.getDouble(ph.getDiscount());
+            double vouPaid = Util1.getDouble(ph.getPaid());
+            double vouBal = Util1.getDouble(ph.getBalance());
             List<Gl> listGl = new ArrayList<>();
             //income
-            if (Util1.getDouble(ph.getVouTotal()) > 0) {
+            if (vouBal > 0) {
                 Gl gl = new Gl();
                 gl.setGlDate(vouDate);
                 gl.setDescription("Purchase Voucher Balance");
                 gl.setSrcAccCode(srcAcc);
                 gl.setAccCode(balAcc);
                 gl.setTraderCode(traderCode);
-                gl.setDrAmt(Util1.getDouble(ph.getVouTotal()));
-                gl.setCrAmt(0.0);
+                gl.setDrAmt(vouBal);
                 gl.setCurCode(curCode);
-                gl.setReference("");
+                gl.setReference(remark);
                 gl.setDeptCode(deptCode);
                 gl.setCompCode(compCode);
                 gl.setCreatedDate(Util1.getTodayDate());
@@ -261,17 +301,21 @@ public class StockMessageListener {
                 listGl.add(gl);
             }
             //discount
-            if (Util1.getDouble(ph.getDiscount()) > 0) {
+            if (vouDis > 0) {
                 Gl gl = new Gl();
+                if (vouPaid > 0) {
+                    gl.setSrcAccCode(payAcc);
+                    gl.setCash(true);
+                } else {
+                    gl.setSrcAccCode(balAcc);
+                    gl.setTraderCode(traderCode);
+                }
+                gl.setAccCode(disAcc);
+                gl.setDrAmt(vouDis);
                 gl.setGlDate(vouDate);
                 gl.setDescription("Purchase Voucher Discount");
-                gl.setSrcAccCode(disAcc);
-                gl.setAccCode(balAcc);
-                gl.setTraderCode(traderCode);
-                gl.setCrAmt(Util1.getDouble(ph.getDiscount()));
-                gl.setDrAmt(0.0);
                 gl.setCurCode(curCode);
-                gl.setReference("");
+                gl.setReference(remark);
                 gl.setDeptCode(deptCode);
                 gl.setCompCode(compCode);
                 gl.setCreatedDate(Util1.getTodayDate());
@@ -283,17 +327,15 @@ public class StockMessageListener {
                 listGl.add(gl);
             }
             //payment
-            if (Util1.getDouble(ph.getPaid()) > 0) {
+            if (vouPaid > 0) {
                 Gl gl = new Gl();
                 gl.setGlDate(vouDate);
                 gl.setDescription("Purchase Voucher Paid");
                 gl.setSrcAccCode(payAcc);
-                gl.setAccCode(balAcc);
-                gl.setTraderCode(traderCode);
-                gl.setCrAmt(Util1.getDouble(ph.getPaid()));
-                gl.setDrAmt(0.0);
+                gl.setAccCode(srcAcc);
+                gl.setCrAmt(vouTotal);
                 gl.setCurCode(curCode);
-                gl.setReference("");
+                gl.setReference(remark);
                 gl.setDeptCode(deptCode);
                 gl.setCompCode(compCode);
                 gl.setCreatedDate(Util1.getTodayDate());
@@ -336,6 +378,7 @@ public class StockMessageListener {
             Date vouDate = ri.getVouDate();
             String traderCode = ri.getTraderCode();
             String curCode = ri.getCurCode();
+            String remark = ri.getRemark();
             boolean deleted = ri.getDeleted();
             List<Gl> listGl = new ArrayList<>();
             //income
@@ -349,7 +392,7 @@ public class StockMessageListener {
                 gl.setDrAmt(Util1.getDouble(ri.getVouTotal()));
                 gl.setCrAmt(0.0);
                 gl.setCurCode(curCode);
-                gl.setReference("");
+                gl.setReference(remark);
                 gl.setDeptCode(deptCode);
                 gl.setCompCode(compCode);
                 gl.setCreatedDate(Util1.getTodayDate());
@@ -371,7 +414,7 @@ public class StockMessageListener {
                 gl.setDrAmt(Util1.getDouble(ri.getDiscount()));
                 gl.setCrAmt(0.0);
                 gl.setCurCode(curCode);
-                gl.setReference("");
+                gl.setReference(remark);
                 gl.setDeptCode(deptCode);
                 gl.setCompCode(compCode);
                 gl.setCreatedDate(Util1.getTodayDate());
@@ -393,7 +436,7 @@ public class StockMessageListener {
                 gl.setCrAmt(Util1.getDouble(ri.getPaid()));
                 gl.setDrAmt(0.0);
                 gl.setCurCode(curCode);
-                gl.setReference("");
+                gl.setReference(remark);
                 gl.setDeptCode(deptCode);
                 gl.setCompCode(compCode);
                 gl.setCreatedDate(Util1.getTodayDate());
@@ -437,6 +480,7 @@ public class StockMessageListener {
             Date vouDate = ro.getVouDate();
             String traderCode = ro.getTraderCode();
             String curCode = ro.getCurCode();
+            String remark = ro.getRemark();
             boolean deleted = ro.getDeleted();
             List<Gl> listGl = new ArrayList<>();
             //income
@@ -450,7 +494,7 @@ public class StockMessageListener {
                 gl.setCrAmt(Util1.getDouble(ro.getVouTotal()));
                 gl.setDrAmt(0.0);
                 gl.setCurCode(curCode);
-                gl.setReference("");
+                gl.setReference(remark);
                 gl.setDeptCode(deptCode);
                 gl.setCompCode(compCode);
                 gl.setCreatedDate(Util1.getTodayDate());
@@ -472,7 +516,7 @@ public class StockMessageListener {
                 gl.setDrAmt(Util1.getDouble(ro.getDiscount()));
                 gl.setCrAmt(0.0);
                 gl.setCurCode(curCode);
-                gl.setReference("");
+                gl.setReference(remark);
                 gl.setDeptCode(deptCode);
                 gl.setCompCode(compCode);
                 gl.setCreatedDate(Util1.getTodayDate());
@@ -494,7 +538,7 @@ public class StockMessageListener {
                 gl.setDrAmt(Util1.getDouble(ro.getPaid()));
                 gl.setCrAmt(0.0);
                 gl.setCurCode(curCode);
-                gl.setReference("");
+                gl.setReference(remark);
                 gl.setDeptCode(deptCode);
                 gl.setCompCode(compCode);
                 gl.setCreatedDate(Util1.getTodayDate());
